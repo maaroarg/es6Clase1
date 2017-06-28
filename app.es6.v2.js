@@ -6,9 +6,19 @@
 
 /************* VERSION ES6 ***************/
 
-//document.addEventListener('DOMContentLoaded',getSearchData);
-let urlSeachData = `https://api.mercadolibre.com/sites/MLA/search?q=ps4`; //MELI ENDPOINT
-let maxItems = 5;
+//Control de flujo principal con promesas. Encadeno las tareas utilizando ".then"
+let go = () => {
+  contenedor.innerHTML = "";
+  makeRequest('GET',`${urlSearchData}${txt.value}`)
+  .then(getDetData);
+};
+
+let contenedor = document.querySelector('#contenedor');
+let btn = document.querySelector('button');
+let txt = document.querySelector('#txt');
+btn.addEventListener('click',go);
+const urlSearchData = `https://api.mercadolibre.com/sites/MLA/search?q=`; //MELI ENDPOINT
+const maxItems = 5;
 
 //Funcion XHR generica que retorna una promesa
 function makeRequest(method,url){
@@ -40,29 +50,32 @@ function getDetData(data){
   (function loop(i) {
       var urlDet = `https://api.mercadolibre.com/items/${items.results[i].id}/description`;
       console.info(`Getting description index: ${i}`);
+
+      //Segundo control de flujo con promesas.
       makeRequest('GET',urlDet)
       .then( (data) => {
         let resp  = JSON.parse(data);
         console.log(`Snapshot Data index: ${i} url: ${resp.snapshot.url}`);
         createImage(resp.snapshot.url);
       })
+      //Para no utilizar un ciclo for, uso recursividad.
+      //Utilizando funciones generadoras puedo hacer lo mismo pero mas legible
+      //y utilizando asinc/await (ES7) lo hago MUCHO mas legible.
+      //To be continue...
       .then( () => i >= maxItems - 1  || loop(i+1) );
   })(0);
 
-}
+  //Funcion que genera la imagen en el DOM
+  var createImage = (url) => {
+    //Genero un elemento img y lo agrego al DOM
+    var contenedor = document.querySelector('#contenedor');
+    var nuevaImagen = document.createElement('img');
+    nuevaImagen.src = url;
+    nuevaImagen.style.width = "10%";
+    contenedor.appendChild(nuevaImagen);
+  }
 
-//Funcion que genera la imagen en el DOM
-var createImage = (url) => {
-  //Genero un elemento img y lo agrego al DOM
-  var contenedor = document.querySelector('#contenedor');
-  var nuevaImagen = document.createElement('img');
-  nuevaImagen.src = url;
-  nuevaImagen.style.width = "10%";
-  contenedor.appendChild(nuevaImagen);
 }
-
-makeRequest('GET',urlSeachData)
-.then(getDetData);
 
 /*
 1) Las variables las defino con let para generar un contexto de bloque
